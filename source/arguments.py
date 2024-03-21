@@ -1,6 +1,6 @@
 import argparse
 import os
-
+import pathlib
 
 
 def argparser():
@@ -69,16 +69,16 @@ def argparser():
   )
   parser.add_argument(
       '--dataset_path',
-      type=str,
-      default='/data/kiba/',
+      type=pathlib.Path,
+      required=True,
       help='Directory for input data.'
   )
-  parser.add_argument(
-      '--problem_type',
-      type=int,
-      default=1,
-      help='Type of the prediction problem (1-4)'
-  )
+#  parser.add_argument(
+#      '--problem_type',
+#      type=int,
+#      default=1,
+#      help='Type of the prediction problem (1-4)'
+#  )
   parser.add_argument(
       '--binary_th',
       type=float,
@@ -93,15 +93,27 @@ def argparser():
   )
   parser.add_argument(
       '--checkpoint_path',
-      type=str,
-      default='',
+      type=pathlib.Path,
+      default=pathlib.Path('.'),
       help='Path to write checkpoint file.'
   )
   parser.add_argument(
       '--log_dir',
-      type=str,
-      default='/tmp',
+      type=pathlib.Path,
+      default=pathlib.Path('/tmp'),
       help='Directory for log data.'
+  )
+  parser.add_argument(
+      '--train_fold',
+      type=pathlib.Path,
+      required=True,
+      help='.txt with train fold split indices'
+  )
+	parser.add_argument(
+      '--test_fold',
+      type=pathlib.Path,
+      required=True,
+      help='.txt with test fold split indices'
   )
 
 
@@ -117,7 +129,7 @@ def argparser():
 
 
 def logging(msg, FLAGS):
-  fpath = os.path.join( FLAGS.log_dir, "log.txt" )
+  fpath = FLAGS.log_dir/"log.txt"
   with open( fpath, "a" ) as fw:
     fw.write("%s\n" % msg)
   #print(msg)

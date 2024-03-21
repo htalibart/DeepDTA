@@ -53,10 +53,7 @@ from copy import deepcopy
 from sklearn import preprocessing
 from emetrics import get_aupr, get_cindex, get_rm2
 
-
-
 TABSY = "\t"
-figdir = "figures/"
 
 def build_combined_onehot(FLAGS, NUM_FILTERS, FILTER_LENGTH1, FILTER_LENGTH2):
     XDinput = Input(shape=(FLAGS.max_smi_len, FLAGS.charsmiset_size))
@@ -94,7 +91,7 @@ def build_combined_onehot(FLAGS, NUM_FILTERS, FILTER_LENGTH1, FILTER_LENGTH2):
     
 
     print(interactionModel.summary())
-    plot_model(interactionModel, to_file='figures/build_combined_onehot.png')
+    plot_model(interactionModel, to_file=FLAGS.fig_dir/'build_combined_onehot.png')
 
     return interactionModel
 
@@ -139,7 +136,7 @@ def build_combined_categorical(FLAGS, NUM_FILTERS, FILTER_LENGTH1, FILTER_LENGTH
 
     interactionModel.compile(optimizer='adam', loss='mean_squared_error', metrics=[cindex_score]) #, metrics=['cindex_score']
     print(interactionModel.summary())
-    plot_model(interactionModel, to_file='figures/build_combined_categorical.png')
+    plot_model(interactionModel, to_file=FLAGS.fig_dir/'build_combined_categorical.png')
 
     return interactionModel
 
@@ -175,7 +172,7 @@ def build_single_drug(FLAGS, NUM_FILTERS, FILTER_LENGTH1, FILTER_LENGTH2):
     interactionModel.compile(optimizer='adam', loss='mean_squared_error', metrics=[cindex_score])
 
     print(interactionModel.summary())
-    plot_model(interactionModel, to_file='figures/build_single_drug.png')
+    plot_model(interactionModel, to_file=FLAGS.fig_dir/'build_single_drug.png')
 
     return interactionModel
 
@@ -208,7 +205,7 @@ def build_single_prot(FLAGS, NUM_FILTERS, FILTER_LENGTH1, FILTER_LENGTH2):
     interactionModel.compile(optimizer='adam', loss='mean_squared_error', metrics=[cindex_score])
 
     print(interactionModel.summary())
-    plot_model(interactionModel, to_file='figures/build_single_protein.png')
+    plot_model(interactionModel, to_file=FLAGS.fig_dir/'build_single_protein.png')
 
     return interactionModel
 
@@ -235,7 +232,7 @@ def build_baseline(FLAGS, NUM_FILTERS, FILTER_LENGTH1, FILTER_LENGTH2):
     interactionModel.compile(optimizer='adam', loss='mean_squared_error', metrics=[cindex_score])
 
     print(interactionModel.summary())
-    plot_model(interactionModel, to_file='figures/build_baseline.png')
+    plot_model(interactionModel, to_file=FLAGS.fig_dir/'build_baseline.png')
 
     return interactionModel
 
@@ -373,7 +370,7 @@ def general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, prfmeasure, run
                     logging("P1 = %d,  P2 = %d, P3 = %d, Fold = %d, CI-i = %f, CI-ii = %f, MSE = %f" % 
                     (param1ind, param2ind, param3ind, foldind, rperf, rperf2, loss), FLAGS)
 
-                    plotLoss(gridres, param1ind, param2ind, param3ind, foldind)
+                    plotLoss(gridres, param1ind, param2ind, param3ind, foldind, FLAGS.fig_dir)
 
                     all_predictions[pointer][foldind] =rperf #TODO FOR EACH VAL SET allpredictions[pointer][foldind]
                     all_losses[pointer][foldind]= loss
@@ -409,22 +406,17 @@ def general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, prfmeasure, run
 
 
 def cindex_score(y_true, y_pred):
-
     g = tf.subtract(tf.expand_dims(y_pred, -1), y_pred)
     g = tf.cast(g == 0.0, tf.float32) * 0.5 + tf.cast(g > 0.0, tf.float32)
-
     f = tf.subtract(tf.expand_dims(y_true, -1), y_true) > 0.0
     f = tf.matrix_band_part(tf.cast(f, tf.float32), -1, 0)
-
     g = tf.reduce_sum(tf.multiply(g, f))
     f = tf.reduce_sum(f)
-
     return tf.where(tf.equal(g, 0), 0.0, g/f) #select
 
 
    
-def plotLoss(history, batchind, epochind, param3ind, foldind):
-
+def plotLoss(history, batchind, epochind, param3ind, foldind, fig_dir):
     figname = "b"+str(batchind) + "_e" + str(epochind) + "_" + str(param3ind) + "_"  + str( foldind) + "_" + str(time.time()) 
     plt.figure()
     plt.plot(history.history['loss'])
@@ -434,7 +426,7 @@ def plotLoss(history, batchind, epochind, param3ind, foldind):
     plt.xlabel('epoch')
 	#plt.legend(['trainloss', 'valloss', 'cindex', 'valcindex'], loc='upper left')
     plt.legend(['trainloss', 'valloss'], loc='upper left')
-    plt.savefig("figures/"+figname +".png" , dpi=None, facecolor='w', edgecolor='w', orientation='portrait', 
+    plt.savefig(fig_dir/(figname +".png") , dpi=None, facecolor='w', edgecolor='w', orientation='portrait', 
                     papertype=None, format=None,transparent=False, bbox_inches=None, pad_inches=0.1,frameon=None)
     plt.close()
 
@@ -447,7 +439,7 @@ def plotLoss(history, batchind, epochind, param3ind, foldind):
     plt.plot(history.history['cindex_score'])
     plt.plot(history.history['val_cindex_score'])
     plt.legend(['traincindex', 'valcindex'], loc='upper left')
-    plt.savefig("figures/"+figname + "_acc.png" , dpi=None, facecolor='w', edgecolor='w', orientation='portrait', 
+    plt.savefig(fig_dir/(figname + "_acc.png") , dpi=None, facecolor='w', edgecolor='w', orientation='portrait', 
                             papertype=None, format=None,transparent=False, bbox_inches=None, pad_inches=0.1,frameon=None)
     plt.close()
 
@@ -486,8 +478,9 @@ def experiment(FLAGS, perfmeasure, deepmethod, foldcount=6): #5-fold cross valid
     #foldcount: number of cross-validation folds for settings 1-3, setting 4 always runs 3x3 cross-validation
 
 
-    dataset = DataSet( fpath = FLAGS.dataset_path, ### BUNU ARGS DA GUNCELLE
-                      setting_no = FLAGS.problem_type, ##BUNU ARGS A EKLE
+    dataset = DataSet(
+					#fpath = FLAGS.dataset_path, ### BUNU ARGS DA GUNCELLE
+                      #setting_no = FLAGS.problem_type, ##BUNU ARGS A EKLE
                       seqlen = FLAGS.max_seq_len,
                       smilen = FLAGS.max_smi_len,
                       need_shuffle = False )
@@ -511,14 +504,14 @@ def experiment(FLAGS, perfmeasure, deepmethod, foldcount=6): #5-fold cross valid
 
     label_row_inds, label_col_inds = np.where(np.isnan(Y)==False)  #basically finds the point address of affinity [x,y]
 
-    if not os.path.exists(figdir):
-        os.makedirs(figdir)
+	FLAGS.fig_dir=FLAGS.log_dir/"figs"
+	FLAGS.fig_dir.mkdir(parents=True, exist_ok=True)
 
     print(FLAGS.log_dir)
     S1_avgperf, S1_avgloss, S1_teststd = nfold_1_2_3_setting_sample(XD, XT, Y, label_row_inds, label_col_inds,
                                                                      perfmeasure, deepmethod, FLAGS, dataset)
 
-    logging("Setting " + str(FLAGS.problem_type), FLAGS)
+    #logging("Setting " + str(FLAGS.problem_type), FLAGS)
     logging("avg_perf = %.5f,  avg_mse = %.5f, std = %.5f" % 
             (S1_avgperf, S1_avgloss, S1_teststd), FLAGS)
 
@@ -537,10 +530,10 @@ def run_regression( FLAGS ):
 
 if __name__=="__main__":
     FLAGS = argparser()
-    FLAGS.log_dir = FLAGS.log_dir + str(time.time()) + "/"
+    FLAGS.log_dir = FLAGS.log_dir/str(time.time()) 
 
-    if not os.path.exists(FLAGS.log_dir):
-        os.makedirs(FLAGS.log_dir)
+    if not FLAGS.log_dir.is_dir():
+        FLAGS.log_dir.mkdir(parents=True)
 
     logging(str(FLAGS), FLAGS)
-    run_regression( FLAGS )
+    run_regression(FLAGS)

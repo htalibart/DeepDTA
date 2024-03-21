@@ -1,3 +1,4 @@
+import pathlib
 import sys, re, math, time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -107,7 +108,7 @@ def label_sequence(line, MAX_SEQ_LEN, smi_ch_ind):
 ## ######################## ## 
 # works for large dataset
 class DataSet(object):
-  def __init__(self, fpath, setting_no, seqlen, smilen, need_shuffle = False):
+  def __init__(self, seqlen, smilen, need_shuffle = False):
     self.SEQLEN = seqlen
     self.SMILEN = smilen
     #self.NCLASSES = n_classes
@@ -116,7 +117,7 @@ class DataSet(object):
 
     self.charsmiset = CHARISOSMISET ###HERE CAN BE EDITED
     self.charsmiset_size = CHARISOSMILEN
-    self.PROBLEMSET = setting_no
+    #self.PROBLEMSET = setting_no
 
     # read raw file
     # self._raw = self.read_sets( FLAGS)
@@ -125,24 +126,19 @@ class DataSet(object):
     # self._num_data = len(self._raw)
 
 
-  def read_sets(self, FLAGS): ### fpath should be the dataset folder /kiba/ or /davis/
-    fpath = FLAGS.dataset_path
-    setting_no = FLAGS.problem_type
-    print("Reading %s start" % fpath)
-
-    test_fold = json.load(open(fpath + "folds/test_fold_setting" + str(setting_no)+".txt"))
-    train_folds = json.load(open(fpath + "folds/train_fold_setting" + str(setting_no)+".txt"))
-    
+  def read_sets(self, FLAGS):
+    test_fold = json.load(open(FLAGS.test_fold, 'r'))
+    train_folds = json.load(open(FLAGS.train_fold, 'r'))
     return test_fold, train_folds
 
-  def parse_data(self, FLAGS,  with_label=True): 
+  def parse_data(self, FLAGS, with_label=True): 
     fpath = FLAGS.dataset_path	
     print("Read %s start" % fpath)
 
-    ligands = json.load(open(fpath+"ligands_can.txt"), object_pairs_hook=OrderedDict)
-    proteins = json.load(open(fpath+"proteins.txt"), object_pairs_hook=OrderedDict)
+    ligands = json.load(open(fpath/"ligands_iso.txt"), object_pairs_hook=OrderedDict)
+    proteins = json.load(open(fpath/"proteins.txt"), object_pairs_hook=OrderedDict)
 
-    Y = pickle.load(open(fpath + "Y","rb"), encoding='latin1') ### TODO: read from raw
+    Y = pickle.load(open(fpath/"Y","rb"), encoding='latin1')
     if FLAGS.is_log:
         Y = -(np.log10(Y/(math.pow(10,9))))
 
