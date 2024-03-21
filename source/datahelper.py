@@ -108,57 +108,57 @@ def label_sequence(line, MAX_SEQ_LEN, smi_ch_ind):
 ## ######################## ## 
 # works for large dataset
 class DataSet(object):
-  def __init__(self, seqlen, smilen, need_shuffle = False):
-	self.SEQLEN = seqlen
-	self.SMILEN = smilen
-	#self.NCLASSES = n_classes
-	self.charseqset = CHARPROTSET
-	self.charseqset_size = CHARPROTLEN
+	def __init__(self, seqlen, smilen, need_shuffle = False):
+		self.SEQLEN = seqlen
+		self.SMILEN = smilen
+		#self.NCLASSES = n_classes
+		self.charseqset = CHARPROTSET
+		self.charseqset_size = CHARPROTLEN
 
-	self.charsmiset = CHARISOSMISET ###HERE CAN BE EDITED
-	self.charsmiset_size = CHARISOSMILEN
-	#self.PROBLEMSET = setting_no
+		self.charsmiset = CHARISOSMISET ###HERE CAN BE EDITED
+		self.charsmiset_size = CHARISOSMILEN
+		#self.PROBLEMSET = setting_no
 
-	# read raw file
-	# self._raw = self.read_sets( FLAGS)
+		# read raw file
+		# self._raw = self.read_sets( FLAGS)
 
-	# iteration flags
-	# self._num_data = len(self._raw)
+		# iteration flags
+		# self._num_data = len(self._raw)
 
 
-  def read_sets(self, FLAGS):
-	test_fold = json.load(open(FLAGS.test_fold, 'r'))
-	train_folds = json.load(open(FLAGS.train_fold, 'r'))
-	return test_fold, train_folds
+	def read_sets(self, FLAGS):
+		test_fold = json.load(open(FLAGS.test_fold, 'r'))
+		train_folds = json.load(open(FLAGS.train_fold, 'r'))
+		return test_fold, train_folds
 
-  def parse_data(self, FLAGS, with_label=True): 
-	fpath = FLAGS.dataset_path	
-	print("Read %s start" % fpath)
+	def parse_data(self, FLAGS, with_label=True): 
+		fpath = FLAGS.dataset_path	
+		print("Read %s start" % fpath)
 
-	ligands = json.load(open(fpath/"ligands_iso.txt"), object_pairs_hook=OrderedDict)
-	proteins = json.load(open(fpath/"proteins.txt"), object_pairs_hook=OrderedDict)
+		ligands = json.load(open(fpath/"ligands_iso.txt"), object_pairs_hook=OrderedDict)
+		proteins = json.load(open(fpath/"proteins.txt"), object_pairs_hook=OrderedDict)
 
-	Y = pickle.load(open(fpath/"Y","rb"), encoding='latin1')
-	if FLAGS.is_log:
-		Y = -(np.log10(Y/(math.pow(10,9))))
+		Y = pickle.load(open(fpath/"Y","rb"), encoding='latin1')
+		if FLAGS.is_log:
+			Y = -(np.log10(Y/(math.pow(10,9))))
 
-	XD = []
-	XT = []
+		XD = []
+		XT = []
 
-	if with_label:
-		for d in ligands.keys():
-			XD.append(label_smiles(ligands[d], self.SMILEN, self.charsmiset))
+		if with_label:
+			for d in ligands.keys():
+				XD.append(label_smiles(ligands[d], self.SMILEN, self.charsmiset))
 
-		for t in proteins.keys():
-			XT.append(label_sequence(proteins[t], self.SEQLEN, self.charseqset))
-	else:
-		for d in ligands.keys():
-			XD.append(one_hot_smiles(ligands[d], self.SMILEN, self.charsmiset))
+			for t in proteins.keys():
+				XT.append(label_sequence(proteins[t], self.SEQLEN, self.charseqset))
+		else:
+			for d in ligands.keys():
+				XD.append(one_hot_smiles(ligands[d], self.SMILEN, self.charsmiset))
 
-		for t in proteins.keys():
-			XT.append(one_hot_sequence(proteins[t], self.SEQLEN, self.charseqset))
-  
-	return XD, XT, Y
+			for t in proteins.keys():
+				XT.append(one_hot_sequence(proteins[t], self.SEQLEN, self.charseqset))
+	  
+		return XD, XT, Y
 
 
 
