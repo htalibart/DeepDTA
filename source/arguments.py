@@ -125,5 +125,5 @@ def argparser():
 def logging(msg, FLAGS):
 	fpath = FLAGS.log_dir/"log.txt"
 	with open( fpath, "a" ) as fw:
-	fw.write("%s\n" % msg)
+		fw.write("%s\n" % msg)
 	#print(msg)
