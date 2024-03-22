@@ -236,6 +236,16 @@ def build_baseline(FLAGS, NUM_FILTERS, FILTER_LENGTH1, FILTER_LENGTH2):
 
 	return interactionModel
 
+
+def test_model(model, XD, XT, Y, label_row_inds, label_col_inds, test_set):
+	testinds = test_set
+	test_rows = label_row_inds[testinds]
+	test_cols = label_col_inds[testinds]
+	test_drugs, test_prots, test_Y = prepare_interaction_pairs(XD, XT, Y, test_rows, test_cols)
+	predictions = model.predict([np.array(test_drugs), np.array(test_prots)])
+	return predictions
+
+
 def nfold_1_2_3_setting_sample(XD, XT,	Y, label_row_inds, label_col_inds, measure, runmethod,	FLAGS, dataset):
 
 	bestparamlist = []
@@ -243,7 +253,6 @@ def nfold_1_2_3_setting_sample(XD, XT,	Y, label_row_inds, label_col_inds, measur
 	
 	foldinds = len(outer_train_sets)
 
-	test_sets = []
 	## TRAIN AND VAL
 	val_sets = []
 	train_sets = []
@@ -256,51 +265,37 @@ def nfold_1_2_3_setting_sample(XD, XT,	Y, label_row_inds, label_col_inds, measur
 		otherfolds.pop(val_foldind)
 		otherfoldsinds = [item for sublist in otherfolds for item in sublist]
 		train_sets.append(otherfoldsinds)
-		test_sets.append(test_set)
 		print("val set", str(len(val_fold)))
 		print("train set", str(len(otherfoldsinds)))
 
 
-
-	bestparamind, best_param_list, bestperf, all_predictions_not_need, losses_not_need = general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, 
-																								measure, runmethod, FLAGS, train_sets, val_sets)
-   
-	#print("Test Set len", str(len(test_set)))
-	#print("Outer Train Set len", str(len(outer_train_sets)))
-	bestparam, best_param_list, bestperf, all_predictions, all_losses = general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, 
-																								measure, runmethod, FLAGS, train_sets, test_sets)
+	best_model = general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, measure, runmethod, FLAGS, train_sets, val_sets)
+	best_model.save(FLAGS.checkpoint_dir/('best.keras'))
+ 
+	predictions = test_model(best_model, XD, XT, Y, label_row_inds, label_col_inds, test_set)
 	
-	testperf = all_predictions[bestparamind]##pointer pos 
-
-	logging("---FINAL RESULTS-----", FLAGS)
-	logging("best param index = %s,  best param = %.5f" % 
-			(bestparamind, bestparam), FLAGS)
+	return best_model, predictions
 
 
-	testperfs = []
-	testloss= []
-
-	avgperf = 0.
-
-	for test_foldind in range(len(test_sets)):
-		foldperf = all_predictions[bestparamind][test_foldind]
-		foldloss = all_losses[bestparamind][test_foldind]
-		testperfs.append(foldperf)
-		testloss.append(foldloss)
-		avgperf += foldperf
-
-	avgperf = avgperf / len(test_sets)
-	avgloss = np.mean(testloss)
-	teststd = np.std(testperfs)
-
-	logging("Test Performance CI", FLAGS)
-	logging(testperfs, FLAGS)
-	logging("Test Performance MSE", FLAGS)
-	logging(testloss, FLAGS)
-
-	return avgperf, avgloss, teststd
+def get_model_name(pointer):
+	return "model_{}".format(pointer)
 
 
+def get_checkpath(checkpoint_dir, model_name):
+	return checkpoint_dir/(model_name+'.keras')
+
+
+def save_model(model, checkpoint_dir, model_name):
+	checkpath = get_checkpath(checkpoint_dir, model_name) 
+	print("Saving model ", model_name, "at ", str(checkpath))
+	model.save(checkpath)
+
+
+def load_model_from_dir(checkpoint_dir, model_name):
+	checkpath = get_checkpath(checkpoint_dir, model_name)
+	dependencies = {'cindex_score': cindex_score} # https://stackoverflow.com/questions/51700351/valueerror-unknown-metric-function-when-using-custom-metric-in-keras
+	return tf.keras.models.load_model(checkpath, custom_objects=dependencies)
+	
 
 
 def general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, prfmeasure, runmethod, FLAGS, labeled_sets, val_sets): ## BURAYA DA FLAGS LAZIM????
@@ -357,14 +352,16 @@ def general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, prfmeasure, run
 
 					gridmodel = runmethod(FLAGS, param1value, param2value, param3value)
 					es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=15)
+
 					gridres = gridmodel.fit(([np.array(train_drugs),np.array(train_prots) ]), np.array(train_Y), batch_size=batchsz, epochs=epoch, 
 							validation_data=( ([np.array(val_drugs), np.array(val_prots) ]), np.array(val_Y)),	shuffle=False, callbacks=[es] ) 
 
+					save_model(gridmodel, FLAGS.checkpoint_dir, get_model_name(pointer))
 
 					predicted_labels = gridmodel.predict([np.array(val_drugs), np.array(val_prots) ])
 					loss, rperf2 = gridmodel.evaluate(([np.array(val_drugs),np.array(val_prots) ]), np.array(val_Y), verbose=0)
 					rperf = prfmeasure(val_Y, predicted_labels)
-					rperf = rperf[0]
+					#rperf = rperf[0]
 
 
 					logging("P1 = %d,  P2 = %d, P3 = %d, Fold = %d, CI-i = %f, CI-ii = %f, MSE = %f" % 
@@ -400,8 +397,10 @@ def general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, prfmeasure, run
 						best_param_list = [param1ind, param2ind, param3ind]
 
 					pointer +=1
+
+	best_model = load_model_from_dir(FLAGS.checkpoint_dir, get_model_name(bestpointer))
 		
-	return	bestpointer, best_param_list, bestperf, all_predictions, all_losses
+	return best_model	
 
 
 
@@ -466,6 +465,11 @@ def prepare_interaction_pairs(XD, XT,  Y, rows, cols):
 	return drug_data,target_data,  affinity
 
 
+def save_predictions(predictions, res_dir):
+	res_dir.mkdir(parents=True, exist_ok=True)
+	out_file = res_dir/"predicted_labels.txt"
+	json.dump(predictions.tolist(), open(out_file, 'w'))
+
 	   
 def experiment(FLAGS, perfmeasure, deepmethod, foldcount=6): #5-fold cross validation + test
 
@@ -508,12 +512,16 @@ def experiment(FLAGS, perfmeasure, deepmethod, foldcount=6): #5-fold cross valid
 	FLAGS.fig_dir.mkdir(parents=True, exist_ok=True)
 
 	print(FLAGS.log_dir)
-	S1_avgperf, S1_avgloss, S1_teststd = nfold_1_2_3_setting_sample(XD, XT, Y, label_row_inds, label_col_inds,
-																	 perfmeasure, deepmethod, FLAGS, dataset)
+	#S1_avgperf, S1_avgloss, S1_teststd = nfold_1_2_3_setting_sample(XD, XT, Y, label_row_inds, label_col_inds, perfmeasure, deepmethod, FLAGS, dataset)
+	best_model, predictions = nfold_1_2_3_setting_sample(XD, XT, Y, label_row_inds, label_col_inds, perfmeasure, deepmethod, FLAGS, dataset)
+
+	print("predictions=", predictions)
+	save_predictions(predictions, FLAGS.output_dir)
 
 	#logging("Setting " + str(FLAGS.problem_type), FLAGS)
-	logging("avg_perf = %.5f,  avg_mse = %.5f, std = %.5f" % 
-			(S1_avgperf, S1_avgloss, S1_teststd), FLAGS)
+	#logging("avg_perf = %.5f,  avg_mse = %.5f, std = %.5f" % 
+	#		(S1_avgperf, S1_avgloss, S1_teststd), FLAGS)
+
 
 
 

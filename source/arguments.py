@@ -92,10 +92,10 @@ def argparser():
 	  help='use log transformation for Y'
 	)
 	parser.add_argument(
-	  '--checkpoint_path',
+	  '--checkpoint_dir',
 	  type=pathlib.Path,
-	  default=pathlib.Path('.'),
-	  help='Path to write checkpoint file.'
+	  required=True,
+	  help='Path to write checkpoint files.'
 	)
 	parser.add_argument(
 	  '--log_dir',
@@ -103,6 +103,13 @@ def argparser():
 	  default=pathlib.Path('/tmp'),
 	  help='Directory for log data.'
 	)
+	parser.add_argument(
+	  '--output_dir',
+	  type=pathlib.Path,
+	  default=pathlib.Path('.'),
+	  help='Directory for output predictions.'
+	)
+
 	parser.add_argument(
 	  '--train_fold',
 	  type=pathlib.Path,
