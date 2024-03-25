@@ -148,7 +148,7 @@ class DataSet(object):
 				otherfoldsinds = [item for sublist in otherfolds for item in sublist]
 				train_folds.append(otherfoldsinds)
 				print("train:", len(otherfoldsinds))
-				print("validation:", len(val_fold)
+				print("validation:", len(val_fold))
 		else:
 			raise Exception("--train_folds or both --train_fold and --validation_fold must be set")
 
