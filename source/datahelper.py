@@ -137,7 +137,7 @@ class DataSet(object):
 			validation_folds = [validation_folds]
 
 		elif FLAGS.train_folds is not None:
-			outer_train_sets = json.load(open(FLAGS.train_fold, 'r'))
+			outer_train_sets = json.load(open(FLAGS.train_folds, 'r'))
 			validation_folds = []
 			train_folds = []
 			for val_foldind in range(len(outer_train_sets)):
