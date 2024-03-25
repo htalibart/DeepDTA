@@ -7,6 +7,7 @@ import pickle
 import collections
 from collections import OrderedDict
 from matplotlib.pyplot import cm
+from copy import deepcopy
 #from keras.preprocessing.sequence import pad_sequences
 
 
@@ -128,8 +129,31 @@ class DataSet(object):
 
 	def read_sets(self, FLAGS):
 		test_fold = json.load(open(FLAGS.test_fold, 'r'))
-		train_folds = json.load(open(FLAGS.train_fold, 'r'))
-		return test_fold, train_folds
+
+		if (FLAGS.validation_fold is not None) and (FLAGS.train_fold is not None):
+			train_fold = json.load(open(FLAGS.train_fold, 'r'))
+			validation_fold = json.load(open(FLAGS.validation_fold, 'r'))
+			train_folds = [train_fold]
+			validation_folds = [validation_folds]
+
+		elif FLAGS.train_folds is not None:
+			outer_train_sets = json.load(open(FLAGS.train_fold, 'r'))
+			validation_folds = []
+			train_folds = []
+			for val_foldind in range(len(outer_train_sets)):
+				val_fold = outer_train_sets[val_foldind]
+				validation_folds.append(val_fold)
+				otherfolds = deepcopy(outer_train_sets)
+				otherfolds.pop(val_foldind)
+				otherfoldsinds = [item for sublist in otherfolds for item in sublist]
+				train_folds.append(otherfoldsinds)
+				print("train:", len(otherfoldsinds))
+				print("validation:", len(val_fold)
+		else:
+			raise Exception("--train_folds or both --train_fold and --validation_fold must be set")
+
+		return test_fold, train_folds, validation_folds
+
 
 	def parse_data(self, FLAGS, with_label=True): 
 		fpath = FLAGS.dataset_path	

@@ -49,7 +49,6 @@ import decimal
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 from random import shuffle
-from copy import deepcopy
 from sklearn import preprocessing
 from emetrics import get_aupr, get_cindex, get_rm2
 
@@ -249,26 +248,7 @@ def test_model(model, XD, XT, Y, label_row_inds, label_col_inds, test_set):
 def nfold_1_2_3_setting_sample(XD, XT,	Y, label_row_inds, label_col_inds, measure, runmethod,	FLAGS, dataset):
 
 	bestparamlist = []
-	test_set, outer_train_sets = dataset.read_sets(FLAGS) 
-	
-	foldinds = len(outer_train_sets)
-
-	## TRAIN AND VAL
-	val_sets = []
-	train_sets = []
-
-	#logger.info('Start training')
-	for val_foldind in range(foldinds):
-		val_fold = outer_train_sets[val_foldind]
-		val_sets.append(val_fold)
-		otherfolds = deepcopy(outer_train_sets)
-		otherfolds.pop(val_foldind)
-		otherfoldsinds = [item for sublist in otherfolds for item in sublist]
-		train_sets.append(otherfoldsinds)
-		print("val set", str(len(val_fold)))
-		print("train set", str(len(otherfoldsinds)))
-
-
+	test_set, train_sets, val_sets = dataset.read_sets(FLAGS)
 	best_model = general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, measure, runmethod, FLAGS, train_sets, val_sets)
 	best_model.save(FLAGS.checkpoint_dir/('best.keras'))
  

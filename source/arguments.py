@@ -111,10 +111,22 @@ def argparser():
 	)
 
 	parser.add_argument(
+	  '--train_folds',
+	  type=pathlib.Path,
+	  default=None,
+	  help='.txt with all 5-fold validation indices as in the original DeepDTA'
+	)
+	parser.add_argument(
 	  '--train_fold',
 	  type=pathlib.Path,
-	  required=True,
+	  default=None,
 	  help='.txt with train fold split indices'
+	)
+	parser.add_argument(
+	  '--validation_fold',
+	  type=pathlib.Path,
+	  default=None,
+	  help='.txt with validation fold split indices'
 	)
 	parser.add_argument(
 	  '--test_fold',
