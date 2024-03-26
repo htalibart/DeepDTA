@@ -41,7 +41,6 @@ from keras.utils import plot_model
 from keras.layers import Bidirectional
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras import optimizers, layers
-from keras.metrics import Accuracy
 
 
 import sys, pickle, os
@@ -138,7 +137,7 @@ def build_combined_categorical(FLAGS, NUM_FILTERS, FILTER_LENGTH1, FILTER_LENGTH
 	interactionModel = Model(inputs=[XDinput, XTinput], outputs=[predictions])
 
 	if FLAGS.binary_prediction:
-		interactionModel.compile(optimizer='adam', loss='binary_crossentropy', metrics=[Accuracy()]) #, metrics=['cindex_score']
+		interactionModel.compile(optimizer='adam', loss='binary_crossentropy', metrics=[tf.keras.metrics.Accuracy()]) #, metrics=['cindex_score']
 	else:
 		interactionModel.compile(optimizer='adam', loss='mean_squared_error', metrics=[cindex_score]) #, metrics=['cindex_score']
 
