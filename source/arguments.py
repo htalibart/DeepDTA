@@ -79,12 +79,7 @@ def argparser():
 	#	   default=1,
 	#	   help='Type of the prediction problem (1-4)'
 	#  )
-	parser.add_argument(
-	  '--binary_th',
-	  type=float,
-	  default=0.0,
-	  help='Threshold to split data into binary classes'
-	)
+
 	parser.add_argument(
 	  '--is_log',
 	  type=int,
