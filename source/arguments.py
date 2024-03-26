@@ -73,6 +73,13 @@ def argparser():
 	  required=True,
 	  help='Directory for input data.'
 	)
+	parser.add_argument(
+	  '--binary_prediction',
+	  type=int,
+	  default=0,
+	  help='Binary output (default: continuous)'
+	)
+
 	#  parser.add_argument(
 	#	   '--problem_type',
 	#	   type=int,
