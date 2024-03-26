@@ -75,9 +75,8 @@ def argparser():
 	)
 	parser.add_argument(
 	  '--binary_prediction',
-	  type=int,
-	  default=0,
-	  help='Binary output (default: continuous)'
+	  action='store_true',
+	  help='Set output to binary (default: continuous)'
 	)
 
 	#  parser.add_argument(
