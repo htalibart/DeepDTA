@@ -354,7 +354,7 @@ def general_nfold_cv(XD, XT,  Y, label_row_inds, label_col_inds, prfmeasure, run
 					logging("P1 = %d,  P2 = %d, P3 = %d, Fold = %d, CI-i = %f, CI-ii = %f, MSE = %f" % 
 					(param1ind, param2ind, param3ind, foldind, rperf, rperf2, loss), FLAGS)
 
-					plotLoss(gridres, param1ind, param2ind, param3ind, foldind, FLAGS.fig_dir)
+					#plotLoss(gridres, param1ind, param2ind, param3ind, foldind, FLAGS.fig_dir)
 
 					all_predictions[pointer][foldind] =rperf #TODO FOR EACH VAL SET allpredictions[pointer][foldind]
 					all_losses[pointer][foldind]= loss
